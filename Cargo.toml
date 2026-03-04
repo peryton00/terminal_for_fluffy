@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "shared",
+    "fluffy-admin",
+    "fluffy-client",
+    "fluffy-ui",
+    "plugins/example-plugin",
+]
+resolver = "2"
