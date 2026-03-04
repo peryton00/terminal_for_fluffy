@@ -40,10 +40,14 @@ pub struct AppState {
     pub input_buffer: String,
     /// Cursor position in the input buffer
     pub cursor_pos: usize,
+    /// Index in history we are currently navigating (None if typing new command)
+    pub history_index: Option<usize>,
+    /// Temporary storage for the input buffer before navigating history
+    pub saved_input: String,
     /// Whether the help overlay is shown
     pub show_help: bool,
-    /// Scroll offset for the output panel
-    pub scroll_offset: usize,
+    /// Scroll offset for the output panel (rendered lines)
+    pub scroll_offset: u16,
     /// Counter for assigning client tags (never resets)
     pub client_counter: usize,
     /// Whether the app should quit
@@ -52,6 +56,8 @@ pub struct AppState {
     pub command_id_counter: u64,
     /// Help scroll offset
     pub help_scroll: u16,
+    /// Last calculated total visual rows (for scroll transitions)
+    pub last_visual_row_count: u16,
 }
 
 impl AppState {
@@ -63,12 +69,15 @@ impl AppState {
             alter_target: None,
             input_buffer: String::new(),
             cursor_pos: 0,
+            history_index: None,
+            saved_input: String::new(),
             show_help: false,
             scroll_offset: 0,
             client_counter: 0,
             should_quit: false,
             command_id_counter: 0,
             help_scroll: 0,
+            last_visual_row_count: 0,
         }
     }
 
@@ -84,22 +93,23 @@ impl AppState {
         format!("f{}", self.client_counter)
     }
 
-    /// Add an output line.
+    /// Add an output line. Splits by newlines automatically.
     pub fn add_output(&mut self, tag: &str, text: &str, color: Color) {
-        self.output_lines.push(OutputLine {
-            tag: tag.to_string(),
-            text: text.to_string(),
-            color,
-            timestamp: chrono::Local::now(),
-        });
+        for line_text in text.lines() {
+            self.output_lines.push(OutputLine {
+                tag: tag.to_string(),
+                text: line_text.to_string(),
+                color,
+                timestamp: chrono::Local::now(),
+            });
+        }
         // Auto-scroll to bottom
         self.scroll_to_bottom();
     }
 
     /// Scroll to bottom of output.
     pub fn scroll_to_bottom(&mut self) {
-        let total = self.output_lines.len();
-        self.scroll_offset = total;
+        self.scroll_offset = u16::MAX;
     }
 
     /// Get the prompt string.

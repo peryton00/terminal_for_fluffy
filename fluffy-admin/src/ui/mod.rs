@@ -138,6 +138,8 @@ pub async fn run_ui(state: SharedState) -> Result<(), Box<dyn std::error::Error>
                             let input = st.input_buffer.clone();
                             st.input_buffer.clear();
                             st.cursor_pos = 0;
+                            st.history_index = None;
+                            st.saved_input.clear();
                             drop(st);
                             repl::process_input(&state, &input).await;
                         }
@@ -184,17 +186,61 @@ pub async fn run_ui(state: SharedState) -> Result<(), Box<dyn std::error::Error>
                         st.cursor_pos = st.input_buffer.len();
                     }
 
-                    // Up arrow — scroll output up
-                    KeyCode::Up => {
-                        st.scroll_offset = st.scroll_offset.saturating_sub(1);
+                    // Up arrow — History navigation
+                    KeyCode::Up if !key.modifiers.contains(KeyModifiers::SHIFT) => {
+                        if !st.command_history.is_empty() {
+                            let new_index = match st.history_index {
+                                Some(idx) => if idx > 0 { Some(idx - 1) } else { Some(0) },
+                                None => {
+                                    st.saved_input = st.input_buffer.clone();
+                                    Some(st.command_history.len() - 1)
+                                }
+                            };
+                            
+                            if let Some(idx) = new_index {
+                                st.history_index = Some(idx);
+                                st.input_buffer = st.command_history[idx].clone();
+                                st.cursor_pos = st.input_buffer.len();
+                            }
+                        }
                     }
 
-                    // Down arrow — scroll output down
-                    KeyCode::Down => {
-                        st.scroll_offset = st.scroll_offset.saturating_add(1);
-                        let max = st.output_lines.len();
-                        if st.scroll_offset > max {
-                            st.scroll_offset = max;
+                    // Down arrow — History navigation
+                    KeyCode::Down if !key.modifiers.contains(KeyModifiers::SHIFT) => {
+                        if let Some(idx) = st.history_index {
+                            let new_index = idx + 1;
+                            if new_index < st.command_history.len() {
+                                st.history_index = Some(new_index);
+                                st.input_buffer = st.command_history[new_index].clone();
+                                st.cursor_pos = st.input_buffer.len();
+                            } else {
+                                st.history_index = None;
+                                st.input_buffer = st.saved_input.clone();
+                                st.cursor_pos = st.input_buffer.len();
+                            }
+                        }
+                    }
+
+                    // Shift + Up — scroll output up
+                    KeyCode::Up if key.modifiers.contains(KeyModifiers::SHIFT) => {
+                        if st.scroll_offset == u16::MAX {
+                            // Start manual scroll from the bottom
+                            // Estimate total rows based on line count
+                            st.scroll_offset = (st.output_lines.len() as u16).saturating_sub(1);
+                        } else {
+                            st.scroll_offset = st.scroll_offset.saturating_sub(1);
+                        }
+                    }
+
+                    // Shift + Down — scroll output down
+                    KeyCode::Down if key.modifiers.contains(KeyModifiers::SHIFT) => {
+                        if st.scroll_offset != u16::MAX {
+                            st.scroll_offset = st.scroll_offset.saturating_add(1);
+                            let max = st.output_lines.len() as u16;
+                            if st.scroll_offset >= max {
+                                // Re-enable sticky bottom if we hit the end
+                                st.scroll_offset = u16::MAX;
+                            }
                         }
                     }
 
@@ -206,8 +252,8 @@ pub async fn run_ui(state: SharedState) -> Result<(), Box<dyn std::error::Error>
                     // Page Down
                     KeyCode::PageDown => {
                         st.scroll_offset = st.scroll_offset.saturating_add(10);
-                        let max = st.output_lines.len();
-                        if st.scroll_offset > max {
+                        let max = st.output_lines.len() as u16;
+                        if st.scroll_offset > max && max > 0 {
                             st.scroll_offset = max;
                         }
                     }

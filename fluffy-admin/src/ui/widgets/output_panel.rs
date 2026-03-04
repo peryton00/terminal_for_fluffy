@@ -21,20 +21,10 @@ impl<'a> Widget for OutputPanelWidget<'a> {
             .title(" Output ")
             .title_style(theme::brand_style());
 
-        let inner_height = area.height.saturating_sub(2) as usize;
-        let total_lines = self.state.output_lines.len();
 
-        // Calculate scroll position
-        let scroll_offset = if total_lines > inner_height {
-            // If scroll_offset is at the end, auto-scroll
-            if self.state.scroll_offset >= total_lines {
-                total_lines.saturating_sub(inner_height)
-            } else {
-                self.state.scroll_offset.min(total_lines.saturating_sub(inner_height))
-            }
-        } else {
-            0
-        };
+
+        let mut total_visual_rows = 0u16;
+        let content_width = area.width.saturating_sub(2); // Account for borders
 
         let lines: Vec<Line> = self
             .state
@@ -42,6 +32,18 @@ impl<'a> Widget for OutputPanelWidget<'a> {
             .iter()
             .map(|line| {
                 let time_str = line.timestamp.format("%H:%M:%S").to_string();
+                let tag_str = format!("[{}] ", line.tag);
+                let content = &line.text;
+
+                // Calculate how many rows this specific line takes
+                // tag + time + text
+                let total_len = time_str.len() + 1 + tag_str.len() + content.len();
+                let rows = if content_width > 0 {
+                    (total_len as u16 + content_width - 1) / content_width
+                } else {
+                    1
+                };
+                total_visual_rows += rows;
 
                 let tag_style = if line.tag == "local" {
                     theme::local_tag_style()
@@ -53,16 +55,25 @@ impl<'a> Widget for OutputPanelWidget<'a> {
 
                 Line::from(vec![
                     Span::styled(format!("{} ", time_str), theme::dim_style()),
-                    Span::styled(format!("[{}] ", line.tag), tag_style),
-                    Span::styled(&line.text, ratatui::style::Style::default().fg(line.color)),
+                    Span::styled(tag_str, tag_style),
+                    Span::styled(content, ratatui::style::Style::default().fg(line.color)),
                 ])
             })
             .collect();
 
+        // If scroll_offset is u16::MAX, we want Sticky-Bottom
+        let scroll_val = if self.state.scroll_offset == u16::MAX {
+            total_visual_rows.saturating_sub(area.height.saturating_sub(2))
+        } else {
+            // Manual scroll mode: user has scrolled to a specific position
+            // We'll treat scroll_offset as the top line to show
+            self.state.scroll_offset
+        };
+
         let paragraph = Paragraph::new(lines)
             .block(block)
             .wrap(Wrap { trim: false })
-            .scroll((scroll_offset as u16, 0));
+            .scroll((scroll_val, 0));
 
         Widget::render(paragraph, area, buf);
     }

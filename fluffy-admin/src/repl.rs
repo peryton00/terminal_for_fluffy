@@ -12,10 +12,12 @@ pub async fn process_input(state: &SharedState, raw_input: &str) {
         return;
     }
 
-    // Add to history
+    // Add to history (avoid duplicates)
     {
         let mut st = state.lock().await;
-        st.command_history.push(input.to_string());
+        if st.command_history.last() != Some(&input.to_string()) {
+            st.command_history.push(input.to_string());
+        }
     }
 
     // ─── Admin-side built-in commands ───────────────────────
