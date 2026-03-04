@@ -4,7 +4,7 @@ pub mod widgets;
 use std::time::Duration;
 
 use crossterm::{
-    event::{self, Event, KeyCode, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -95,6 +95,12 @@ pub async fn run_ui(state: SharedState) -> Result<(), Box<dyn std::error::Error>
         // Handle events with a short timeout for responsive UI updates
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
+                // On Windows, Crossterm sends both Press and Release events.
+                // We only want to process Press events to avoid double-processing characters.
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
+                
                 let mut st = state.lock().await;
 
                 // Handle help overlay keys
