@@ -269,6 +269,7 @@ dependencies = [
  "shared",
  "sysinfo",
  "tokio",
+ "unicode-width",
 ]
 
 [[package]]

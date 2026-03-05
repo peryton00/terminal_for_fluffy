@@ -33,3 +33,5 @@ ehthumbs.db
 # Temporary files
 /tmp/
 *.tmp
+
+.agent

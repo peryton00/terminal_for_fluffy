@@ -22,35 +22,20 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
     {
         let mut st = state.lock().await;
         st.client_service_status = ClientServiceStatus::Connecting(admin_ip.clone());
-        st.client_output.push(crate::app::OutputLine {
-            tag: "client".to_string(),
-            text: format!("Connecting to admin at {}...", admin_addr),
-            color: theme::DIM_COLOR,
-            timestamp: chrono::Local::now(),
-        });
+        st.add_client_output("client", &format!("Connecting to admin at {}...", admin_addr), theme::DIM_COLOR);
     }
 
     let stream = match TcpStream::connect(&admin_addr).await {
         Ok(s) => {
             let mut st = state.lock().await;
             st.client_service_status = ClientServiceStatus::Running(admin_ip.clone());
-            st.client_output.push(crate::app::OutputLine {
-                tag: "client".to_string(),
-                text: "Connected to admin.".to_string(),
-                color: theme::SUCCESS_COLOR,
-                timestamp: chrono::Local::now(),
-            });
+            st.add_client_output("client", "Connected to admin.", theme::SUCCESS_COLOR);
             s
         }
         Err(e) => {
             let mut st = state.lock().await;
             st.client_service_status = ClientServiceStatus::Error(e.to_string());
-            st.client_output.push(crate::app::OutputLine {
-                tag: "client".to_string(),
-                text: format!("Failed to connect to {}: {}", admin_addr, e),
-                color: theme::ERROR_COLOR,
-                timestamp: chrono::Local::now(),
-            });
+            st.add_client_output("client", &format!("Failed to connect to {}: {}", admin_addr, e), theme::ERROR_COLOR);
             return;
         }
     };
@@ -74,12 +59,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
         Ok(j) => j,
         Err(e) => {
             let mut st = state.lock().await;
-            st.client_output.push(crate::app::OutputLine {
-                tag: "client".to_string(),
-                text: format!("Failed to serialize handshake: {}", e),
-                color: theme::ERROR_COLOR,
-                timestamp: chrono::Local::now(),
-            });
+            st.add_client_output("client", &format!("Failed to serialize handshake: {}", e), theme::ERROR_COLOR);
             return;
         }
     };
@@ -92,12 +72,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
 
     {
         let mut st = state.lock().await;
-        st.client_output.push(crate::app::OutputLine {
-            tag: "client".to_string(),
-            text: "Handshake sent. Waiting for commands...".to_string(),
-            color: theme::DIM_COLOR,
-            timestamp: chrono::Local::now(),
-        });
+        st.add_client_output("client", "Handshake sent. Waiting for commands...", theme::DIM_COLOR);
     }
 
     // Create executor state
@@ -118,12 +93,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
             Ok(Ok(0)) => {
                 let mut st = state.lock().await;
                 st.client_service_status = ClientServiceStatus::Stopped;
-                st.client_output.push(crate::app::OutputLine {
-                    tag: "client".to_string(),
-                    text: "Admin disconnected.".to_string(),
-                    color: theme::DIM_COLOR,
-                    timestamp: chrono::Local::now(),
-                });
+                st.add_client_output("client", "Admin disconnected.", theme::DIM_COLOR);
                 break;
             }
             Ok(Ok(_)) => {
@@ -136,12 +106,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
                     Ok(cmd) => cmd,
                     Err(e) => {
                         let mut st = state.lock().await;
-                        st.client_output.push(crate::app::OutputLine {
-                            tag: "client".to_string(),
-                            text: format!("Failed to parse command: {}. Raw: {}", e, line),
-                            color: theme::ERROR_COLOR,
-                            timestamp: chrono::Local::now(),
-                        });
+                        st.add_client_output("client", &format!("Failed to parse command: {}. Raw: {}", e, line), theme::ERROR_COLOR);
                         continue;
                     }
                 };
@@ -165,12 +130,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
                         Ok(j) => j,
                         Err(e) => {
                             let mut st = state_clone.lock().await;
-                            st.client_output.push(crate::app::OutputLine {
-                                tag: "client".to_string(),
-                                text: format!("Failed to serialize response: {}", e),
-                                color: theme::ERROR_COLOR,
-                                timestamp: chrono::Local::now(),
-                            });
+                            st.add_client_output("client", &format!("Failed to serialize response: {}", e), theme::ERROR_COLOR);
                             let err_resp = ClientResponse {
                                 id: cmd_id,
                                 client_id: String::new(),
@@ -190,12 +150,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
             Ok(Err(e)) => {
                 let mut st = state.lock().await;
                 st.client_service_status = ClientServiceStatus::Error(e.to_string());
-                st.client_output.push(crate::app::OutputLine {
-                    tag: "client".to_string(),
-                    text: format!("Read error: {}", e),
-                    color: theme::ERROR_COLOR,
-                    timestamp: chrono::Local::now(),
-                });
+                st.add_client_output("client", &format!("Read error: {}", e), theme::ERROR_COLOR);
                 break;
             }
             Err(_) => {
@@ -208,12 +163,7 @@ pub async fn run_client_agent(state: SharedState, admin_ip: String) {
     {
         let mut st = state.lock().await;
         st.client_service_status = ClientServiceStatus::Stopped;
-        st.client_output.push(crate::app::OutputLine {
-            tag: "client".to_string(),
-            text: "Client agent stopped.".to_string(),
-            color: theme::DIM_COLOR,
-            timestamp: chrono::Local::now(),
-        });
+        st.add_client_output("client", "Client agent stopped.", theme::DIM_COLOR);
     }
 }
 

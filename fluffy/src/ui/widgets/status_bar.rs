@@ -47,7 +47,7 @@ impl<'a> Widget for StatusBarWidget<'a> {
             Span::styled("  │  ", theme::status_bar_style()),
             Span::styled(time, theme::status_bar_style()),
             Span::styled("  │  ", theme::status_bar_style()),
-            Span::styled(format!("0.0.0.0:{}", self.state.admin_port), theme::status_bar_style()),
+            Span::styled(format!("PORT: {}", self.state.admin_port), theme::status_bar_style()),
         ];
 
         // Pad the rest

@@ -61,7 +61,7 @@ pub struct AppState {
     /// Whether the help overlay is shown
     pub show_help: bool,
     /// Scroll offset for the output panel (rendered lines)
-    pub scroll_offset: u16,
+    pub scroll_offset: u32,
     /// Counter for assigning client tags (never resets)
     pub client_counter: usize,
     /// Whether the app should quit
@@ -69,7 +69,7 @@ pub struct AppState {
     /// Help scroll offset
     pub help_scroll: u16,
     /// Last calculated total visual rows (for scroll transitions)
-    pub last_visual_row_count: u16,
+    pub last_visual_row_count: u32,
     /// Pending command ID counter
     pub command_id_counter: u64,
     /// Current display mode (Admin or Client)
@@ -96,7 +96,7 @@ impl AppState {
             history_index: None,
             saved_input: String::new(),
             show_help: false,
-            scroll_offset: 0,
+            scroll_offset: u32::MAX,
             client_counter: 0,
             should_quit: false,
             command_id_counter: 0,
@@ -136,9 +136,23 @@ impl AppState {
         self.scroll_to_bottom();
     }
 
+    /// Add a client output line. Splits by newlines automatically.
+    pub fn add_client_output(&mut self, tag: &str, text: &str, color: Color) {
+        for line_text in text.lines() {
+            self.client_output.push(OutputLine {
+                tag: tag.to_string(),
+                text: line_text.to_string(),
+                color,
+                timestamp: chrono::Local::now(),
+            });
+        }
+        // Auto-scroll to bottom
+        self.scroll_to_bottom();
+    }
+
     /// Scroll to bottom of output.
     pub fn scroll_to_bottom(&mut self) {
-        self.scroll_offset = u16::MAX;
+        self.scroll_offset = u32::MAX;
     }
 
     /// Get the prompt string.
