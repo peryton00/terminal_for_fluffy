@@ -1,8 +1,7 @@
 [workspace]
 members = [
     "shared",
-    "fluffy-admin",
-    "fluffy-client",
+    "fluffy",
     "fluffy-ui",
     "plugins/example-plugin",
 ]

@@ -56,3 +56,38 @@ pub enum Command {
     /// Execute a raw shell command
     Shell { command: String },
 }
+
+pub struct CommandMetadata {
+    pub name: &'static str,
+    pub usage: &'static str,
+    pub description: &'static str,
+}
+
+pub fn get_client_commands() -> Vec<CommandMetadata> {
+    vec![
+        CommandMetadata { name: "ls", usage: "ls [path]", description: "List files and folders" },
+        CommandMetadata { name: "pwd", usage: "pwd", description: "Print working directory" },
+        CommandMetadata { name: "cd", usage: "cd <path>", description: "Change directory" },
+        CommandMetadata { name: "cat", usage: "cat <file>", description: "Print file contents" },
+        CommandMetadata { name: "whoami", usage: "whoami", description: "Device name + username + role" },
+        CommandMetadata { name: "sysinfo", usage: "sysinfo", description: "Full system information" },
+        CommandMetadata { name: "processes", usage: "processes", description: "List all processes (by CPU%)" },
+        CommandMetadata { name: "kill", usage: "kill <pid>", description: "Kill a process by PID" },
+        CommandMetadata { name: "disk", usage: "disk --info", description: "RAM + disk usage info" },
+        CommandMetadata { name: "lock", usage: "lock", description: "Lock the target's screen" },
+        CommandMetadata { name: "shutdown", usage: "shutdown", description: "Shutdown the target" },
+        CommandMetadata { name: "restart", usage: "restart", description: "Restart the target" },
+        CommandMetadata { name: "notify", usage: "notify \"msg\"", description: "Desktop notification on target" },
+        CommandMetadata { name: "alert", usage: "alert", description: "Play alert sound on target" },
+        CommandMetadata { name: "locate", usage: "locate", description: "Network geolocation (IP-based)" },
+        CommandMetadata { name: "netinfo", usage: "netinfo", description: "Network information" },
+        CommandMetadata { name: "users", usage: "users", description: "List user accounts" },
+        CommandMetadata { name: "screenshot", usage: "screenshot", description: "Capture screen (save as PNG)" },
+        CommandMetadata { name: "clipboard", usage: "clipboard", description: "Read clipboard text content" },
+        CommandMetadata { name: "battery", usage: "battery", description: "Battery status" },
+        CommandMetadata { name: "upload", usage: "upload <file>", description: "Transfer file TO target" },
+        CommandMetadata { name: "download", usage: "download <file>", description: "Transfer file FROM target" },
+        CommandMetadata { name: "ping", usage: "ping", description: "Latency check (returns PONG)" },
+        CommandMetadata { name: "sh", usage: "sh <command>", description: "Run raw shell command" },
+    ]
+}
