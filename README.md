@@ -2,6 +2,7 @@
 
 A cross-platform LAN-based remote administration terminal built in Rust. Control multiple machines on your local network from a single, beautiful TUI interface.
 
+Ready to connect with any software with easy call
 ## Architecture
 
 ```
